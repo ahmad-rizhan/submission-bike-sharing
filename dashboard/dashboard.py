@@ -10,7 +10,7 @@ st.title("🚲 Bike Sharing Dashboard")
 st.write("Dashboard analisis penyewaan sepeda periode 2011–2012")
 
 # Load data
-df = pd.read_csv("main_data.csv")
+df = pd.read_csv("dashboard/main_data.csv")
 
 # Mapping tahun
 df['year_label'] = df['yr'].map({0: 2011, 1: 2012})
