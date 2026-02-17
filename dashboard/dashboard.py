@@ -10,6 +10,16 @@ st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 
 st.title("🚲 Bike Sharing Dashboard")
 st.write("Dashboard analisis penyewaan sepeda periode 2011–2012")
+# =============================
+# BUSINESS QUESTIONS
+# =============================
+st.header("Business Questions")
+
+st.markdown("""
+- **Musim apa yang memiliki rata-rata penyewaan sepeda tertinggi dan terendah selama periode 2011–2012, serta bagaimana implikasinya terhadap strategi operasional layanan penyewaan?**
+
+- **Bagaimana perbedaan rata-rata jumlah penyewaan sepeda berdasarkan kondisi cuaca selama periode 2011–2012, dan kondisi mana yang perlu diantisipasi dalam perencanaan kapasitas layanan?**
+""")
 
 # =============================
 # Load Data
