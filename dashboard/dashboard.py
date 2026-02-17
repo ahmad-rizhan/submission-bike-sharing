@@ -141,6 +141,51 @@ else:
         st.pyplot(fig4)
 
 # =============================
+    # INSIGHT DINAMIS
+    # =============================
+    st.subheader("Insight Dinamis Berdasarkan Filter")
+
+    total_rent = filtered_df['cnt'].sum()
+    avg_rent = filtered_df['cnt'].mean()
+
+    # Musim tertinggi
+    season_summary = filtered_df.groupby('season')['cnt'].mean()
+    if not season_summary.empty:
+        top_season = season_summary.idxmax()
+        top_season_value = season_summary.max()
+    else:
+        top_season = "-"
+        top_season_value = 0
+
+    # Cuaca tertinggi
+    weather_summary = filtered_df.groupby('weathersit')['cnt'].mean()
+    if not weather_summary.empty:
+        top_weather = weather_summary.idxmax()
+        top_weather_value = weather_summary.max()
+    else:
+        top_weather = "-"
+        top_weather_value = 0
+
+    # Hari dengan penyewaan tertinggi
+    if 'dteday' in filtered_df.columns and not filtered_df.empty:
+        peak_day = filtered_df.loc[filtered_df['cnt'].idxmax()]
+        peak_date = peak_day['dteday'].date()
+        peak_value = peak_day['cnt']
+    else:
+        peak_date = "-"
+        peak_value = 0
+
+    st.markdown(f"""
+    **Ringkasan Analisis Berdasarkan Filter Saat Ini:**
+
+    - Total penyewaan pada periode terpilih adalah **{total_rent:,.0f} unit**.
+    - Rata-rata penyewaan harian adalah **{avg_rent:,.2f} unit**.
+    - Musim dengan rata-rata penyewaan tertinggi adalah **{top_season}** dengan rata-rata **{top_season_value:,.2f} unit**.
+    - Kondisi cuaca dengan rata-rata penyewaan tertinggi adalah **{top_weather}** dengan rata-rata **{top_weather_value:,.2f} unit**.
+    - Puncak penyewaan terjadi pada tanggal **{peak_date}** dengan jumlah **{peak_value:,.0f} unit**.
+    """)
+
+# =============================
 # KESIMPULAN
 # =============================
 st.header("Kesimpulan")
