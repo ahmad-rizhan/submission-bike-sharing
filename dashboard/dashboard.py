@@ -149,7 +149,57 @@ else:
         sns.barplot(data=temp_avg, x='temp_category', y='cnt', color='steelblue', ax=ax4)
         ax4.set_title("Rata-rata Penyewaan Berdasarkan Kategori Suhu")
         st.pyplot(fig4)
+# =============================
+    # JAWABAN BUSINESS QUESTIONS
+    # =============================
+    st.header("Jawaban Berdasarkan Data Terpilih")
 
+    # ---- Pertanyaan 1 (Musim) ----
+    season_summary = filtered_df.groupby('season')['cnt'].mean()
+
+    if not season_summary.empty:
+        highest_season = season_summary.idxmax()
+        lowest_season = season_summary.idxmin()
+
+        highest_value = season_summary.max()
+        lowest_value = season_summary.min()
+
+        st.markdown(f"""
+        ### 📌 Jawaban Pertanyaan 1:
+        Musim dengan rata-rata penyewaan tertinggi adalah **{highest_season}**
+        dengan rata-rata **{highest_value:,.2f} unit**.
+
+        Musim dengan rata-rata penyewaan terendah adalah **{lowest_season}**
+        dengan rata-rata **{lowest_value:,.2f} unit**.
+
+        **Implikasi:**
+        Kapasitas operasional perlu ditingkatkan pada musim {highest_season},
+        sementara strategi promosi atau efisiensi biaya dapat difokuskan pada musim {lowest_season}.
+        """)
+
+    # ---- Pertanyaan 2 (Cuaca) ----
+    weather_summary = filtered_df.groupby('weathersit')['cnt'].mean()
+
+    if not weather_summary.empty:
+        highest_weather = weather_summary.idxmax()
+        lowest_weather = weather_summary.idxmin()
+
+        highest_weather_value = weather_summary.max()
+        lowest_weather_value = weather_summary.min()
+
+        st.markdown(f"""
+        ### 📌 Jawaban Pertanyaan 2:
+        Kondisi cuaca dengan rata-rata penyewaan tertinggi adalah **{highest_weather}**
+        dengan rata-rata **{highest_weather_value:,.2f} unit**.
+
+        Kondisi cuaca dengan rata-rata terendah adalah **{lowest_weather}**
+        dengan rata-rata **{lowest_weather_value:,.2f} unit**.
+
+        **Implikasi:**
+        Perencanaan kapasitas layanan perlu mengantisipasi kondisi {highest_weather}
+        sebagai periode dengan permintaan tinggi,
+        serta mengoptimalkan strategi saat kondisi {lowest_weather}.
+        """)
 # =============================
     # INSIGHT DINAMIS
     # =============================
