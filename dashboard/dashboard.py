@@ -3,101 +3,100 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ===============================
-# KONFIGURASI AWAL
-# ===============================
 st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 
 st.title("🚲 Bike Sharing Dashboard")
 st.write("Dashboard analisis penyewaan sepeda periode 2011–2012")
 
-# ===============================
+# ==============================
 # LOAD DATA
-# ===============================
-df = pd.read_csv("dashboard/main_data.csv")
-
-# Ubah kolom tanggal jadi datetime
+# ==============================
+df = pd.read_csv("main_data.csv")
 df['dteday'] = pd.to_datetime(df['dteday'])
 
-# ===============================
-# FILTER SIDEBAR (WAJIB DINAMIS)
-# ===============================
+# ==============================
+# SIDEBAR FILTER
+# ==============================
 st.sidebar.header("Filter Data")
 
-min_date = df['dteday'].min()
-max_date = df['dteday'].max()
+min_date = df['dteday'].min().date()
+max_date = df['dteday'].max().date()
 
 date_range = st.sidebar.date_input(
     "Pilih Rentang Tanggal",
-    [min_date, max_date],
+    value=(min_date, max_date),
     min_value=min_date,
     max_value=max_date
 )
 
 if len(date_range) == 2:
-    start_date, end_date = date_range
-    filtered_df = df[(df['dteday'] >= pd.to_datetime(start_date)) &
-                     (df['dteday'] <= pd.to_datetime(end_date))]
+    start_date = pd.to_datetime(date_range[0])
+    end_date = pd.to_datetime(date_range[1])
+
+    filtered_df = df[
+        (df['dteday'] >= start_date) &
+        (df['dteday'] <= end_date)
+    ]
 else:
     filtered_df = df.copy()
 
-# ===============================
-# PERTANYAAN 1 – MUSIM
-# ===============================
-st.subheader("📊 Rata-rata Penyewaan Sepeda per Musim")
+# ==============================
+# VISUALISASI 1
+# RATA-RATA PENYEWAAN PER MUSIM
+# ==============================
+st.subheader("Rata-rata Penyewaan Sepeda per Musim")
 
 season_avg = filtered_df.groupby('season')['cnt'].mean().reset_index()
 
-fig1, ax1 = plt.subplots()
-sns.barplot(data=season_avg, x='season', y='cnt', color='steelblue', ax=ax1)
-ax1.set_xlabel("Musim")
-ax1.set_ylabel("Rata-rata Penyewaan")
-st.pyplot(fig1)
+plt.figure(figsize=(8,5))
+sns.barplot(data=season_avg, x='season', y='cnt', color='steelblue')
+plt.title("Rata-rata Penyewaan Sepeda per Musim")
+plt.xlabel("Musim")
+plt.ylabel("Rata-rata Penyewaan")
+st.pyplot(plt)
 
-# Insight Dinamis Musim
+# Insight Dinamis
 if not season_avg.empty:
-    max_season = season_avg.loc[season_avg['cnt'].idxmax(), 'season']
-    min_season = season_avg.loc[season_avg['cnt'].idxmin(), 'season']
+    highest = season_avg.loc[season_avg['cnt'].idxmax()]
+    lowest = season_avg.loc[season_avg['cnt'].idxmin()]
 
-    st.markdown("### Insight Musim")
-    st.markdown(f"""
-    1. Musim dengan rata-rata penyewaan tertinggi adalah **{max_season}**.
-    2. Musim dengan rata-rata penyewaan terendah adalah **{min_season}**.
-    3. Pola ini menunjukkan adanya pengaruh musiman terhadap permintaan sepeda.
-    """)
+    st.markdown("### Insight:")
+    st.write(f"1. Musim dengan rata-rata penyewaan tertinggi adalah **{highest['season']}**.")
+    st.write(f"2. Musim dengan rata-rata penyewaan terendah adalah **{lowest['season']}**.")
+    st.write("3. Pola musiman menunjukkan adanya pengaruh musim terhadap tingkat permintaan sepeda.")
 
-# ===============================
-# PERTANYAAN 2 – CUACA
-# ===============================
-st.subheader("🌤️ Rata-rata Penyewaan Sepeda Berdasarkan Cuaca")
+# ==============================
+# VISUALISASI 2
+# RATA-RATA PENYEWAAN BERDASARKAN CUACA
+# ==============================
+st.subheader("Rata-rata Penyewaan Sepeda Berdasarkan Kondisi Cuaca")
 
 weather_avg = filtered_df.groupby('weathersit')['cnt'].mean().reset_index()
 
-fig2, ax2 = plt.subplots()
-sns.barplot(data=weather_avg, x='weathersit', y='cnt', color='steelblue', ax=ax2)
-ax2.set_xlabel("Kondisi Cuaca")
-ax2.set_ylabel("Rata-rata Penyewaan")
-st.pyplot(fig2)
+plt.figure(figsize=(8,5))
+sns.barplot(data=weather_avg, x='weathersit', y='cnt', color='steelblue')
+plt.title("Rata-rata Penyewaan Sepeda Berdasarkan Kondisi Cuaca")
+plt.xlabel("Kondisi Cuaca")
+plt.ylabel("Rata-rata Penyewaan")
+st.pyplot(plt)
 
-# Insight Dinamis Cuaca
+# Insight Dinamis
 if not weather_avg.empty:
-    max_weather = weather_avg.loc[weather_avg['cnt'].idxmax(), 'weathersit']
-    min_weather = weather_avg.loc[weather_avg['cnt'].idxmin(), 'weathersit']
+    highest_weather = weather_avg.loc[weather_avg['cnt'].idxmax()]
+    lowest_weather = weather_avg.loc[weather_avg['cnt'].idxmin()]
 
-    st.markdown("### Insight Cuaca")
-    st.markdown(f"""
-    1. Kondisi cuaca dengan rata-rata penyewaan tertinggi adalah **{max_weather}**.
-    2. Kondisi dengan rata-rata penyewaan terendah adalah **{min_weather}**.
-    3. Semakin buruk kondisi cuaca, kecenderungan penyewaan sepeda semakin menurun.
-    """)
+    st.markdown("### Insight:")
+    st.write(f"1. Kondisi cuaca dengan rata-rata penyewaan tertinggi adalah **{highest_weather['weathersit']}**.")
+    st.write(f"2. Kondisi cuaca dengan rata-rata penyewaan terendah adalah **{lowest_weather['weathersit']}**.")
+    st.write("3. Semakin buruk kondisi cuaca, cenderung semakin rendah jumlah penyewaan sepeda.")
 
-# ===============================
-# METRIK TAMBAHAN (BIAR LEBIH KUAT)
-# ===============================
-st.subheader("📈 Ringkasan Statistik")
+# ==============================
+# CONCLUSION DINAMIS
+# ==============================
+st.subheader("Kesimpulan")
 
-col1, col2, col3 = st.columns(3)
-
-col1.metric("Total Penyewaan", int(filtered_df['cnt'].sum()))
-col2.metric("Rata-rata Harian", round(filtered_df['cnt'].mean(), 2))
-col3.metric("Jumlah Hari", filtered_df['dteday'].nunique())
+if not season_avg.empty and not weather_avg.empty:
+    st.write("Berdasarkan filter tanggal yang dipilih:")
+    st.write(f"- Musim paling tinggi: **{highest['season']}**")
+    st.write(f"- Cuaca paling tinggi: **{highest_weather['weathersit']}**")
+    st.write("Hal ini menunjukkan faktor lingkungan seperti musim dan cuaca sangat memengaruhi tingkat penyewaan sepeda.")
