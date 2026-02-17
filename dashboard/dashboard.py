@@ -16,19 +16,17 @@ st.write("Dashboard analisis penyewaan sepeda periode 2011–2012")
 # =============================
 df = pd.read_csv("dashboard/main_data.csv")
 
-# Pastikan kolom tanggal dalam format datetime
 if 'dteday' in df.columns:
     df['dteday'] = pd.to_datetime(df['dteday'])
 
-# Mapping tahun
 year_map = {0: 2011, 1: 2012}
 
 # =============================
-# SIDEBAR FILTER (DINAMIS)
+# SIDEBAR FILTER
 # =============================
 st.sidebar.header("Filter Data")
 
-# Filter Tahun
+# Tahun
 selected_year_label = st.sidebar.selectbox(
     "Pilih Tahun",
     options=list(year_map.values())
@@ -36,7 +34,7 @@ selected_year_label = st.sidebar.selectbox(
 
 selected_year_code = [k for k, v in year_map.items() if v == selected_year_label][0]
 
-# Filter Tanggal
+# Tanggal
 if 'dteday' in df.columns:
     min_date = df['dteday'].min()
     max_date = df['dteday'].max()
@@ -48,7 +46,7 @@ if 'dteday' in df.columns:
 else:
     start_date, end_date = None, None
 
-# Filter Musim
+# Musim
 season_list = df['season'].unique().tolist()
 selected_season = st.sidebar.multiselect(
     "Pilih Musim",
@@ -56,7 +54,7 @@ selected_season = st.sidebar.multiselect(
     default=season_list
 )
 
-# Filter Cuaca
+# Cuaca
 weather_list = df['weathersit'].unique().tolist()
 selected_weather = st.sidebar.multiselect(
     "Pilih Cuaca",
@@ -65,26 +63,22 @@ selected_weather = st.sidebar.multiselect(
 )
 
 # =============================
-# FILTER FINAL DATA
+# FILTER DATA
 # =============================
 filtered_df = df.copy()
 
-# Filter tahun
 filtered_df = filtered_df[filtered_df['yr'] == selected_year_code]
 
-# Filter tanggal
 if start_date is not None:
     filtered_df = filtered_df[
         (filtered_df['dteday'] >= pd.to_datetime(start_date)) &
         (filtered_df['dteday'] <= pd.to_datetime(end_date))
     ]
 
-# Filter musim
 filtered_df = filtered_df[
     filtered_df['season'].isin(selected_season)
 ]
 
-# Filter cuaca
 filtered_df = filtered_df[
     filtered_df['weathersit'].isin(selected_weather)
 ]
@@ -92,81 +86,59 @@ filtered_df = filtered_df[
 st.subheader(f"Analisis Tahun {selected_year_label}")
 
 # =============================
-# VISUALISASI 1
-# Rata-rata Penyewaan per Musim
+# CEK DATA KOSONG
 # =============================
-season_avg = filtered_df.groupby('season')['cnt'].mean().reset_index()
+if filtered_df.empty:
+    st.warning("Tidak ada data yang sesuai dengan filter yang dipilih. Silakan ubah filter.")
+else:
 
-fig1, ax1 = plt.subplots(figsize=(6,4))
-sns.barplot(data=season_avg, x='season', y='cnt', color='steelblue', ax=ax1)
-ax1.set_title("Rata-rata Penyewaan Sepeda per Musim")
-ax1.set_xlabel("Musim")
-ax1.set_ylabel("Rata-rata Penyewaan")
+    # =============================
+    # VISUALISASI 1
+    # =============================
+    season_avg = filtered_df.groupby('season')['cnt'].mean().reset_index()
 
-st.pyplot(fig1)
+    fig1, ax1 = plt.subplots(figsize=(6,4))
+    sns.barplot(data=season_avg, x='season', y='cnt', color='steelblue', ax=ax1)
+    ax1.set_title("Rata-rata Penyewaan Sepeda per Musim")
+    st.pyplot(fig1)
 
-st.markdown("""
-**Insight:**
-1. Musim dengan rata-rata penyewaan tertinggi menunjukkan periode permintaan paling kuat.
-2. Musim dengan rata-rata terendah perlu strategi promosi atau efisiensi operasional.
-3. Pola musiman berpengaruh terhadap tingkat penggunaan layanan.
-""")
+    # =============================
+    # VISUALISASI 2
+    # =============================
+    weather_avg = filtered_df.groupby('weathersit')['cnt'].mean().reset_index()
 
-# =============================
-# VISUALISASI 2
-# Rata-rata Penyewaan berdasarkan Cuaca
-# =============================
-weather_avg = filtered_df.groupby('weathersit')['cnt'].mean().reset_index()
+    fig2, ax2 = plt.subplots(figsize=(6,4))
+    sns.barplot(data=weather_avg, x='weathersit', y='cnt', color='steelblue', ax=ax2)
+    ax2.set_title("Rata-rata Penyewaan Berdasarkan Cuaca")
+    st.pyplot(fig2)
 
-fig2, ax2 = plt.subplots(figsize=(6,4))
-sns.barplot(data=weather_avg, x='weathersit', y='cnt', color='steelblue', ax=ax2)
-ax2.set_title("Rata-rata Penyewaan Berdasarkan Kondisi Cuaca")
-ax2.set_xlabel("Kondisi Cuaca")
-ax2.set_ylabel("Rata-rata Penyewaan")
+    # =============================
+    # VISUALISASI 3
+    # =============================
+    if 'dteday' in filtered_df.columns:
+        trend_data = filtered_df.sort_values('dteday')
 
-st.pyplot(fig2)
+        fig3, ax3 = plt.subplots(figsize=(8,4))
+        ax3.plot(trend_data['dteday'], trend_data['cnt'])
+        ax3.set_title("Tren Penyewaan Harian")
+        st.pyplot(fig3)
 
-st.markdown("""
-**Insight:**
-1. Cuaca cerah cenderung meningkatkan jumlah penyewaan sepeda.
-2. Kondisi cuaca buruk menyebabkan penurunan signifikan pada penggunaan sepeda.
-3. Faktor cuaca perlu dipertimbangkan dalam perencanaan kapasitas layanan.
-""")
+    # =============================
+    # VISUALISASI 4 (AMAN)
+    # =============================
+    if not filtered_df['temp'].empty:
+        filtered_df['temp_category'] = pd.cut(
+            filtered_df['temp'],
+            bins=3,
+            labels=['Low', 'Medium', 'High']
+        )
 
-# =============================
-# VISUALISASI 3
-# Tren Penyewaan Harian
-# =============================
-if 'dteday' in filtered_df.columns:
-    trend_data = filtered_df.sort_values('dteday')
+        temp_avg = filtered_df.groupby('temp_category')['cnt'].mean().reset_index()
 
-    fig3, ax3 = plt.subplots(figsize=(8,4))
-    ax3.plot(trend_data['dteday'], trend_data['cnt'])
-    ax3.set_title("Tren Penyewaan Harian")
-    ax3.set_xlabel("Tanggal")
-    ax3.set_ylabel("Jumlah Penyewaan")
-
-    st.pyplot(fig3)
-
-# =============================
-# VISUALISASI 4
-# Kategori Suhu
-# =============================
-filtered_df['temp_category'] = pd.cut(
-    filtered_df['temp'],
-    bins=3,
-    labels=['Low', 'Medium', 'High']
-)
-
-temp_avg = filtered_df.groupby('temp_category')['cnt'].mean().reset_index()
-
-fig4, ax4 = plt.subplots(figsize=(6,4))
-sns.barplot(data=temp_avg, x='temp_category', y='cnt', color='steelblue', ax=ax4)
-ax4.set_title("Rata-rata Penyewaan Berdasarkan Kategori Suhu")
-ax4.set_xlabel("Kategori Suhu")
-ax4.set_ylabel("Rata-rata Penyewaan")
-
-st.pyplot(fig4)
+        fig4, ax4 = plt.subplots(figsize=(6,4))
+        sns.barplot(data=temp_avg, x='temp_category', y='cnt', color='steelblue', ax=ax4)
+        ax4.set_title("Rata-rata Penyewaan Berdasarkan Kategori Suhu")
+        st.pyplot(fig4)
 
 # =============================
 # KESIMPULAN
@@ -174,8 +146,6 @@ st.pyplot(fig4)
 st.header("Kesimpulan")
 
 st.markdown("""
-1. Musim memiliki pengaruh signifikan terhadap jumlah penyewaan sepeda.
-2. Kondisi cuaca memengaruhi tingkat penggunaan layanan secara langsung.
-3. Tanggal, musim, dan cuaca secara dinamis memengaruhi hasil analisis.
-4. Dashboard kini sepenuhnya interaktif sesuai filter yang dipilih.
+Dashboard bersifat dinamis dan seluruh visualisasi akan berubah sesuai filter tahun, tanggal, musim, dan cuaca.
+Jika filter menghasilkan data kosong, sistem akan menampilkan peringatan.
 """)
