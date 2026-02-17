@@ -3,138 +3,101 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# =============================
-# Konfigurasi halaman
-# =============================
+# ===============================
+# KONFIGURASI AWAL
+# ===============================
 st.set_page_config(page_title="Bike Sharing Dashboard", layout="wide")
 
 st.title("🚲 Bike Sharing Dashboard")
 st.write("Dashboard analisis penyewaan sepeda periode 2011–2012")
 
-# =============================
-# Load Data
-# =============================
+# ===============================
+# LOAD DATA
+# ===============================
 df = pd.read_csv("dashboard/main_data.csv")
 
-# Mapping tahun
-year_map = {0: 2011, 1: 2012}
+# Ubah kolom tanggal jadi datetime
+df['dteday'] = pd.to_datetime(df['dteday'])
 
-# =============================
-# SIDEBAR FILTER
-# =============================
+# ===============================
+# FILTER SIDEBAR (WAJIB DINAMIS)
+# ===============================
 st.sidebar.header("Filter Data")
 
-selected_year_label = st.sidebar.selectbox(
-    "Pilih Tahun",
-    options=list(year_map.values())
+min_date = df['dteday'].min()
+max_date = df['dteday'].max()
+
+date_range = st.sidebar.date_input(
+    "Pilih Rentang Tanggal",
+    [min_date, max_date],
+    min_value=min_date,
+    max_value=max_date
 )
 
-selected_year_code = [k for k, v in year_map.items() if v == selected_year_label][0]
+if len(date_range) == 2:
+    start_date, end_date = date_range
+    filtered_df = df[(df['dteday'] >= pd.to_datetime(start_date)) &
+                     (df['dteday'] <= pd.to_datetime(end_date))]
+else:
+    filtered_df = df.copy()
 
-filtered_df = df[df['yr'] == selected_year_code]
+# ===============================
+# PERTANYAAN 1 – MUSIM
+# ===============================
+st.subheader("📊 Rata-rata Penyewaan Sepeda per Musim")
 
-st.subheader(f"Analisis Tahun {selected_year_label}")
-
-# =============================
-# VISUALISASI 1
-# Rata-rata Penyewaan per Musim
-# =============================
 season_avg = filtered_df.groupby('season')['cnt'].mean().reset_index()
 
-fig1, ax1 = plt.subplots(figsize=(6,4))
+fig1, ax1 = plt.subplots()
 sns.barplot(data=season_avg, x='season', y='cnt', color='steelblue', ax=ax1)
-ax1.set_title("Rata-rata Penyewaan Sepeda per Musim")
 ax1.set_xlabel("Musim")
 ax1.set_ylabel("Rata-rata Penyewaan")
-
 st.pyplot(fig1)
 
-st.markdown("""
-**Insight:**
-1. Musim dengan rata-rata penyewaan tertinggi menunjukkan periode permintaan paling kuat.
-2. Musim dengan rata-rata terendah perlu strategi promosi atau efisiensi operasional.
-3. Pola musiman berpengaruh terhadap tingkat penggunaan layanan.
-""")
+# Insight Dinamis Musim
+if not season_avg.empty:
+    max_season = season_avg.loc[season_avg['cnt'].idxmax(), 'season']
+    min_season = season_avg.loc[season_avg['cnt'].idxmin(), 'season']
 
-# =============================
-# VISUALISASI 2
-# Rata-rata Penyewaan berdasarkan Cuaca
-# =============================
+    st.markdown("### Insight Musim")
+    st.markdown(f"""
+    1. Musim dengan rata-rata penyewaan tertinggi adalah **{max_season}**.
+    2. Musim dengan rata-rata penyewaan terendah adalah **{min_season}**.
+    3. Pola ini menunjukkan adanya pengaruh musiman terhadap permintaan sepeda.
+    """)
+
+# ===============================
+# PERTANYAAN 2 – CUACA
+# ===============================
+st.subheader("🌤️ Rata-rata Penyewaan Sepeda Berdasarkan Cuaca")
+
 weather_avg = filtered_df.groupby('weathersit')['cnt'].mean().reset_index()
 
-fig2, ax2 = plt.subplots(figsize=(6,4))
+fig2, ax2 = plt.subplots()
 sns.barplot(data=weather_avg, x='weathersit', y='cnt', color='steelblue', ax=ax2)
-ax2.set_title("Rata-rata Penyewaan Berdasarkan Kondisi Cuaca")
 ax2.set_xlabel("Kondisi Cuaca")
 ax2.set_ylabel("Rata-rata Penyewaan")
-
 st.pyplot(fig2)
 
-st.markdown("""
-**Insight:**
-1. Cuaca cerah cenderung meningkatkan jumlah penyewaan sepeda.
-2. Kondisi cuaca buruk menyebabkan penurunan signifikan pada penggunaan sepeda.
-3. Faktor cuaca perlu dipertimbangkan dalam perencanaan kapasitas layanan.
-""")
+# Insight Dinamis Cuaca
+if not weather_avg.empty:
+    max_weather = weather_avg.loc[weather_avg['cnt'].idxmax(), 'weathersit']
+    min_weather = weather_avg.loc[weather_avg['cnt'].idxmin(), 'weathersit']
 
-# =============================
-# VISUALISASI 3
-# Rata-rata Penyewaan per Tahun
-# =============================
-yearly_avg = df.groupby('yr')['cnt'].mean().reset_index()
-yearly_avg['yr'] = yearly_avg['yr'].map(year_map)
+    st.markdown("### Insight Cuaca")
+    st.markdown(f"""
+    1. Kondisi cuaca dengan rata-rata penyewaan tertinggi adalah **{max_weather}**.
+    2. Kondisi dengan rata-rata penyewaan terendah adalah **{min_weather}**.
+    3. Semakin buruk kondisi cuaca, kecenderungan penyewaan sepeda semakin menurun.
+    """)
 
-fig3, ax3 = plt.subplots(figsize=(6,4))
-sns.barplot(data=yearly_avg, x='yr', y='cnt', color='steelblue', ax=ax3)
-ax3.set_title("Rata-rata Penyewaan Sepeda per Tahun")
-ax3.set_xlabel("Tahun")
-ax3.set_ylabel("Rata-rata Penyewaan")
+# ===============================
+# METRIK TAMBAHAN (BIAR LEBIH KUAT)
+# ===============================
+st.subheader("📈 Ringkasan Statistik")
 
-st.pyplot(fig3)
+col1, col2, col3 = st.columns(3)
 
-st.markdown("""
-**Insight:**
-1. Terdapat perbedaan rata-rata penyewaan antara tahun 2011 dan 2012.
-2. Tahun dengan nilai lebih tinggi menunjukkan peningkatan minat atau pertumbuhan penggunaan.
-3. Hal ini mengindikasikan adanya tren peningkatan penggunaan layanan.
-""")
-
-# =============================
-# VISUALISASI 4 (Analisis Lanjutan)
-# Kategori Suhu (Binning)
-# =============================
-filtered_df['temp_category'] = pd.cut(
-    filtered_df['temp'],
-    bins=3,
-    labels=['Low', 'Medium', 'High']
-)
-
-temp_avg = filtered_df.groupby('temp_category')['cnt'].mean().reset_index()
-
-fig4, ax4 = plt.subplots(figsize=(6,4))
-sns.barplot(data=temp_avg, x='temp_category', y='cnt', color='steelblue', ax=ax4)
-ax4.set_title("Rata-rata Penyewaan Berdasarkan Kategori Suhu")
-ax4.set_xlabel("Kategori Suhu")
-ax4.set_ylabel("Rata-rata Penyewaan")
-
-st.pyplot(fig4)
-
-st.markdown("""
-**Insight (Analisis Lanjutan):**
-1. Suhu yang lebih tinggi cenderung menghasilkan rata-rata penyewaan lebih besar.
-2. Suhu rendah menunjukkan tingkat penggunaan yang lebih rendah.
-3. Faktor suhu menjadi variabel penting dalam pola penggunaan sepeda.
-""")
-
-# =============================
-# KESIMPULAN
-# =============================
-st.header("Kesimpulan")
-
-st.markdown("""
-1. Musim memiliki pengaruh signifikan terhadap jumlah penyewaan sepeda.
-2. Kondisi cuaca memengaruhi tingkat penggunaan layanan secara langsung.
-3. Terdapat peningkatan rata-rata penyewaan dari tahun 2011 ke 2012.
-4. Suhu yang lebih tinggi berkorelasi dengan peningkatan penggunaan sepeda.
-5. Faktor lingkungan (musim, cuaca, suhu) berperan penting dalam perencanaan operasional layanan.
-""")
+col1.metric("Total Penyewaan", int(filtered_df['cnt'].sum()))
+col2.metric("Rata-rata Harian", round(filtered_df['cnt'].mean(), 2))
+col3.metric("Jumlah Hari", filtered_df['dteday'].nunique())
